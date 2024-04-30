@@ -1,130 +1,194 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Import Ionicons from Expo vector icons
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, ScrollView, Dimensions, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
 
-const SignUp = ({ handleSignup, handleNavigationBack }) => {
-  const [signupUsername, setSignupUsername] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [email, setEmail] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+const SignupScreen = () => {
+  const navigation = useNavigation();
+  const [formData, setFormData] = useState({
+    username: '',
+    doctorName: '',
+    age: '',
+    gender: '',
+    department: '',
+    contactNumber: '',
+    password: ''
+  });
 
-  const handleSignupPress = () => {
-    if (!signupUsername || !email || !signupPassword || !confirmPassword) {
-      Alert.alert('Please enter all the information.');
+  const handleBack = () => {
+    console.log("Navigating back...");
+    navigation.goBack();
+  };
+
+  const handleSignup = () => {
+    if (!formData.username || !formData.password || !formData.doctorName || !formData.age || !formData.gender || !formData.department || !formData.contactNumber) {
+      Alert.alert('Error', 'Please provide all the information.');
       return;
     }
-  
-    if (!email.includes('@')) {
-      Alert.alert('Please enter a valid email.');
-      return;
-    }
-    
-    if (signupPassword !== confirmPassword) {
-      Alert.alert('Passwords do not match.');
-      return;
-    }
-    // Make HTTP request for registration
-    fetch('http://192.168.163.243/medical/project.php', {
+
+    const filteredFormData = Object.fromEntries(
+      Object.entries(formData).filter(([key, value]) => {
+        if (key === 'age' || key === 'contactNumber') {
+          return value !== '' ? [key, value] : [key, null];
+        }
+        return value !== '';
+      })
+    );
+
+    fetch('http://192.168.181.243/demo/sign.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        username: signupUsername,
-        password: signupPassword,
-        email: email,
-        register: true, // Indicate registration in the request
-      }),
+      body: JSON.stringify(filteredFormData),
     })
       .then(response => response.json())
       .then(data => {
-        console.log('Registration Response:', data);
-        if (data.status === 'success') {
-          Alert.alert('Registration successful!');
-          handleSignup(); // Navigate back to login page
+        if (data.success === false) {
+          Alert.alert('Error', data.message);
         } else {
-          Alert.alert('Registration failed. Please try again.');
+          Alert.alert('Success', 'Registration successful');
+          console.log("User signed up successfully");
         }
       })
       .catch(error => {
-        console.error('Registration Error:', error);
-        Alert.alert('Registration failed. Please try again.');
+        console.error('Error:', error);
       });
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.topLeftContainer} onPress={handleNavigationBack}>
-        <Ionicons name="arrow-back" size={30} color="black" />
-      </TouchableOpacity>
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        onChangeText={(text) => setSignupUsername(text)}
-        value={signupUsername}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        onChangeText={(text) => setEmail(text)}
-        value={email}
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        onChangeText={(text) => setSignupPassword(text)}
-        value={signupPassword}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        secureTextEntry
-        onChangeText={(text) => setConfirmPassword(text)}
-        value={confirmPassword}
-      />
-      <TouchableOpacity style={styles.signupButton} onPress={handleSignupPress}>
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
+      <View style={styles.blueContainer}>
+        <TouchableOpacity style={styles.backArrowContainer} onPress={handleBack}>
+          <Icon name="arrow-back" size={windowWidth * 0.08} color="white" />
+        </TouchableOpacity>
+        <FontAwesomeIcon name="user" size={windowWidth * 0.08} color="white" style={styles.userIcon} />
+        <Text style={styles.signupText}>Signup</Text>
+      </View>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Doctor ID"
+            onChangeText={text => setFormData({ ...formData, username: text })}
+          />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Doctor Name"
+            onChangeText={text => setFormData({ ...formData, doctorName: text })}
+          />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Age"
+            onChangeText={text => setFormData({ ...formData, age: text })}
+          />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Gender"
+            onChangeText={text => setFormData({ ...formData, gender: text })}
+          />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Department"
+            onChangeText={text => setFormData({ ...formData, department: text })}
+          />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Contact Number"
+            onChangeText={text => setFormData({ ...formData, contactNumber: text })}
+          />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Password"
+            secureTextEntry={true}
+            onChangeText={text => setFormData({ ...formData, password: text })}
+          />
+        </View>
+        <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
+          <Text style={styles.signupButtonText}>Signup</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 };
 
+const windowWidth = Dimensions.get('window').width;
+const windowHeight = Dimensions.get('window').height;
+
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    flex: 1,
+    backgroundColor: '#E6EEFF',
   },
-  input: {
-    height: 40,
-    width: 300,
-    borderColor: '#333',
+  scrollContent: {
+    alignItems: 'center',
+    paddingTop: windowHeight * 0.15,
+    paddingBottom: windowHeight * 0.05,
+  },
+  blueContainer: {
+    width: '100%',
+    backgroundColor: 'rgba(61, 109, 204, 1)',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    position: 'absolute',
+    height: windowHeight * 0.15, 
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+  },
+  signupText: {
+    fontSize: windowWidth * 0.06,
+    fontWeight: '700',
+    color: 'white',
+    marginBottom: windowHeight * 0.02,
+    top: -windowHeight * 0.010,
+    left: -windowWidth * 0.12,
+  },  
+  backArrowContainer: {
+    position: 'absolute',
+    top: windowHeight * 0.07,
+    left: windowWidth * 0.03,
+    padding: windowWidth * 0.03,
+    zIndex: 2,
+  },  
+  userIcon: {
+    position: 'absolute',
+    top: windowHeight * 0.082,
+    right: windowWidth * 0.76,
+  },
+  inputContainer: {
+    alignItems: 'center',
+    marginTop: windowHeight * 0.1, // Adjusted marginTop to position inputContainer below the blue container
+  },
+  textInput: {
+    width: windowWidth * 0.8,
+    height: windowHeight * 0.05,
+    borderRadius: windowWidth * 0.02,
     borderWidth: 1,
-    marginBottom: 10,
-    paddingLeft: 10,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: 'rgba(253, 245, 245, 1)',
+    borderColor: 'rgba(0, 0, 0, 1)',
+    marginTop: windowHeight * 0.015,
+    marginBottom: windowHeight * 0.01,
+    paddingLeft: windowWidth * 0.04,
+    opacity: 0.5,
   },
   signupButton: {
-    backgroundColor: '#3D6DCC', // Blue color for sign-up button
-    paddingVertical: 12,
-    paddingHorizontal: 50,
-    borderRadius: 25,
-    elevation: 3,
-    marginBottom: 10,
+    width: windowWidth * 0.35,
+    height: windowHeight * 0.05,
+    borderRadius: windowWidth * 0.1,
+    backgroundColor: 'rgba(61, 109, 204, 1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: windowHeight * 0.05,
+    elevation: 20,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '300',
-    textAlign: 'center',
-  },
-  topLeftContainer: {
-    position: 'absolute',
-    bottom:520,
-    left: -10,
-    zIndex: 1,
+  signupButtonText: {
+    color: 'white',
+    fontSize: windowWidth * 0.04,
+    fontWeight: 'bold',
   },
 });
 
-export default SignUp;
+export default SignupScreen;
